@@ -1,0 +1,9 @@
+<launch>
+<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 map camera_link 100" />
+
+  <include file="$(find pointcloud_saver)/launch/openni.launch" />
+  <node pkg="pointcloud_saver" name="pointcloud_saver" type="pointcloud_saver_node" output="screen">
+    <param name="target_frame" value="/map" />
+    <param name="save_path" value="pointclouds" />
+  </node>
+</launch>
