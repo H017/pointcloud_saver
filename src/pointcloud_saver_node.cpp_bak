@@ -18,22 +18,22 @@ tf::TransformListener* tfListener;
 
 bool save_pc_callback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
 {
-    sensor_msgs::PointCloud2::ConstPtr pc = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/camera/depth_registered/points", *nh, ros::Duration(10.0));
-
-    if (!pc)
+    sensor_msgs::PointCloud2 pc;
+    try
     {
-        ROS_ERROR("Could not retrieve point cloud");
+        pc  = *(ros::topic::waitForMessage<sensor_msgs::PointCloud2>("/camera/depth_registered/points",ros::Duration(10)));
+    }
+    catch(...)
+    {
+        ROS_WARN("Could not retrieve point cloud");
         return false;
     }
 
     PointCloud cloud;
-    PointCloud cloud2;
-    pcl::fromROSMsg(*pc, cloud);
-    
     try
     {
-        tfListener->waitForTransform(targetFrame, (*pc).header.frame_id, (*pc).header.stamp, ros::Duration(5.0));
-        pcl_ros::transformPointCloud(targetFrame, cloud, cloud2, *tfListener);
+        tfListener->waitForTransform(targetFrame, pc.header.frame_id, pc.header.stamp, ros::Duration(5.0));
+        pcl_ros::transformPointCloud(targetFrame, pc, cloud, *tfListener);
     }
     catch (tf::TransformException ex)
     {
@@ -41,10 +41,11 @@ bool save_pc_callback(std_srvs::Empty::Request& request, std_srvs::Empty::Respon
         return false;
     }
 
-    std::stringstream ss;
-    ss << savePath << "/pc_" << (*pc).header.stamp << ".pcd";      
-    pcl::io::savePCDFile (ss.str (), cloud2, true); 
-  
+    /*std::stringstream ss;
+    ss << savePath << "/pc_" << pc->header.stamp << ".pcd";      
+    pcl::io::savePCDFile (ss.str (), *cloud, true); 
+ */
+ 
     return true;
 }
 
@@ -57,7 +58,7 @@ int main(int argc, char **argv)
 
     nh->param<std::string>("save_path", savePath, "pointclouds");
     nh->param<std::string>("target_frame", targetFrame, "/map");
-
+   
     ros::ServiceServer service = n.advertiseService("save_pointcloud", save_pc_callback);
 
     ros::spin();
