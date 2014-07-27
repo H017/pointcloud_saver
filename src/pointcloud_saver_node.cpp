@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     interface->start ();
 
     // Publisher
-    pub = n.advertise<sensor_msgs::PointCloud2>("point_cloud", 5);    
+    pub = n.advertise<sensor_msgs::PointCloud2>("point_cloud", 15);    
 
     // TF + Service
     tfListener = new tf::TransformListener;
