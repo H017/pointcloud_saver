@@ -2,6 +2,7 @@
 #include <std_srvs/Empty.h>
 #include <pcl/point_types.h>
 #include <pcl/io/io.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl_ros/transforms.h>
 #include <tf/transform_listener.h>
@@ -13,6 +14,7 @@ std::string savePath, targetFrame;
 tf::TransformListener* tfListener;
 PointCloud::Ptr currentCloud;
 ros::Time currentPointCloudTime;
+ros::Publisher pub;
 
 bool save_pc_callback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
 {
@@ -31,6 +33,12 @@ void cloudCallback (const PointCloud::ConstPtr &cloud)
 {
     currentPointCloudTime = ros::Time::now();
     pcl::copyPointCloud(*cloud, *currentCloud);
+    if ( pub.getNumSubscribers() > 0 )
+    {
+        sensor_msgs::PointCloud2 msg;
+        pcl::toROSMsg(*cloud, msg);
+        pub.publish(msg);
+    }
 }
 
 int main(int argc, char **argv)
@@ -49,6 +57,9 @@ int main(int argc, char **argv)
     interface->registerCallback (f);
     currentCloud = PointCloud::Ptr(new PointCloud);
     interface->start ();
+
+    // Publisher
+    pub = n.advertise<sensor_msgs::PointCloud2>("point_cloud", 5);    
 
     // TF + Service
     tfListener = new tf::TransformListener;
